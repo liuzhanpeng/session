@@ -8,6 +8,7 @@ class SessionRedisHandler implements \SessionHandlerInterface
 {
     private $redisPool;
     private $lifeTime;
+    private $prefix = 'zsnewshuodong_session_';
 
     public function __construct(Redis $pool, int $lifeTime = 3600)
     {
@@ -22,7 +23,7 @@ class SessionRedisHandler implements \SessionHandlerInterface
 
     public function destroy($session_id)
     {
-        return $this->redisPool::defer('redis')->del($session_id);
+        return $this->redisPool::defer('redis')->del($this->prefix . $session_id);
     }
 
     public function gc($maxlifetime)
@@ -37,11 +38,11 @@ class SessionRedisHandler implements \SessionHandlerInterface
 
     public function read($session_id)
     {
-        return $this->redisPool::defer('redis')->get($session_id);
+        return $this->redisPool::defer('redis')->get($this->prefix . $session_id);
     }
 
     public function write($session_id, $session_data)
     {
-        return $this->redisPool::defer('redis')->set($session_id, $session_data, $this->lifeTime);
+        return $this->redisPool::defer('redis')->set($this->prefix . $session_id, $session_data, $this->lifeTime);
     }
 }
