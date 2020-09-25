@@ -1,7 +1,7 @@
 <?php
 
 
-namespace EasySwoole\Session;
+namespace Lzpeng\EasySwoole\Session;
 
 
 use EasySwoole\Component\ChannelLock;
@@ -16,7 +16,7 @@ class SessionFileHandler implements \SessionHandlerInterface
     function __construct(?string $tempDir = null)
     {
         ChannelLock::getInstance();
-        if(!$tempDir){
+        if (!$tempDir) {
             $tempDir = sys_get_temp_dir();
         }
         $this->temp = $tempDir;
@@ -33,12 +33,12 @@ class SessionFileHandler implements \SessionHandlerInterface
         $stream = $this->getStream($session_id);
         ChannelLock::getInstance()->lock($session_id);
         $stream->lock();
-        try{
+        try {
             $file = "{$this->contextArray['path']}/{$session_id}";
             unlink($file);
-        }catch (\Throwable $throwable){
+        } catch (\Throwable $throwable) {
             throw $throwable;
-        }finally{
+        } finally {
             $stream->unlock();
             $stream->close();
             ChannelLock::getInstance()->unlock($session_id);
@@ -55,11 +55,11 @@ class SessionFileHandler implements \SessionHandlerInterface
 
     public function open($save_path, $name)
     {
-        $save_path = trim($save_path,'/');
-        $dir = $this->temp.'/'.$save_path;
+        $save_path = trim($save_path, '/');
+        $dir = $this->temp . '/' . $save_path;
         $this->contextArray['path'] = $dir;
-        if(!is_dir($dir)){
-            return mkdir($this->temp.'/'.$save_path,0777,true);
+        if (!is_dir($dir)) {
+            return mkdir($this->temp . '/' . $save_path, 0777, true);
         }
         return true;
     }
@@ -78,13 +78,13 @@ class SessionFileHandler implements \SessionHandlerInterface
         $stream = $this->getStream($session_id);
         ChannelLock::getInstance()->lock($session_id);
         $stream->lock();
-        try{
+        try {
             $stream->truncate();
             $stream->seek(0);
             $stream->write($session_data);
-        }catch (\Throwable $throwable){
+        } catch (\Throwable $throwable) {
             throw $throwable;
-        }finally{
+        } finally {
             $stream->unlock();
             $stream->close();
             ChannelLock::getInstance()->unlock($session_id);
@@ -96,10 +96,10 @@ class SessionFileHandler implements \SessionHandlerInterface
     private function getStream(string $session_id)
     {
         $file = "{$this->contextArray['path']}/{$session_id}";
-        if(!$this->contextArray['stream']){
-            $stream = new SplFileStream($file,'c+');
+        if (!$this->contextArray['stream']) {
+            $stream = new SplFileStream($file, 'c+');
             $this->contextArray['stream'] = $stream;
-        }else{
+        } else {
             $stream = $this->contextArray['stream'];
         }
         return $stream;

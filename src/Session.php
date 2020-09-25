@@ -1,9 +1,9 @@
 <?php
 
 
-namespace EasySwoole\Session;
+namespace Lzpeng\EasySwoole\Session;
 
-use EasySwoole\Session\Exception\Exception;
+use Lzpeng\EasySwoole\Session\Exception\Exception;
 use EasySwoole\Spl\SplContextArray;
 use EasySwoole\Utility\Random;
 use Swoole\Coroutine;
@@ -14,7 +14,7 @@ class Session
     /** @var \SessionHandlerInterface */
     private $handler;
     //默认活跃时间为一星期
-    private $maxLifeTime = 3600*24*7;
+    private $maxLifeTime = 3600 * 24 * 7;
     private $sessionDataContext;
     private $sessionConfigContext;
     private $autoClear = true;
@@ -25,7 +25,7 @@ class Session
     private $onClose;
     private $onStart;
 
-    function __construct(\SessionHandlerInterface $storage,$sessionName = 'easy_session',$savePath = '/')
+    function __construct(\SessionHandlerInterface $storage, $sessionName = 'easy_session', $savePath = '/')
     {
         $this->name = $sessionName;
         $this->savePath = $savePath;
@@ -36,7 +36,7 @@ class Session
 
     public static function getInstance(...$args)
     {
-        if(!isset(self::$instance)){
+        if (!isset(self::$instance)) {
             self::$instance = new static(...$args);
         }
         return self::$instance;
@@ -54,23 +54,23 @@ class Session
         return $this;
     }
 
-    function sessionId(string $sid = null):string
+    function sessionId(string $sid = null): string
     {
-        if($sid){
-            if(!$this->sessionConfigContext['isStart']){
+        if ($sid) {
+            if (!$this->sessionConfigContext['isStart']) {
                 $this->sessionConfigContext['sid'] = $sid;
-            }else{
+            } else {
                 throw new Exception('can not modify sid after session start');
             }
-        }else{
-            if(empty($this->sessionConfigContext['sid'])){
+        } else {
+            if (empty($this->sessionConfigContext['sid'])) {
                 $this->sessionConfigContext['sid'] = strtolower(Random::character(32));
             }
         }
         return $this->sessionConfigContext['sid'];
     }
 
-    function set($key,$data)
+    function set($key, $data)
     {
         $this->start();
         $this->sessionDataContext[$key] = $data;
@@ -88,7 +88,7 @@ class Session
         unset($this->sessionDataContext[$key]);
     }
 
-    function all():?array
+    function all(): ?array
     {
         $this->start();
         return $this->sessionDataContext->toArray();
@@ -97,34 +97,34 @@ class Session
     function destroy()
     {
         $this->start();
-        try{
+        try {
             $sid = $this->sessionId();
             $this->handler->destroy($sid);
             $this->sessionConfigContext['destroy'] = true;
             $this->writeClose();
-        }catch (\Throwable $throwable){
+        } catch (\Throwable $throwable) {
             throw $throwable;
-        }finally{
+        } finally {
             $this->writeClose();
         }
     }
 
     function writeClose()
     {
-        try{
-            if($this->sessionConfigContext['isStart']){
-                if($this->onClose){
-                    call_user_func($this->onClose,$this);
+        try {
+            if ($this->sessionConfigContext['isStart']) {
+                if ($this->onClose) {
+                    call_user_func($this->onClose, $this);
                 }
-                if(!$this->sessionConfigContext['destroy']){
+                if (!$this->sessionConfigContext['destroy']) {
                     $data = $this->sessionDataContext->toArray();
-                    $this->handler->write($this->sessionId(),serialize($data));
+                    $this->handler->write($this->sessionId(), serialize($data));
                 }
                 $this->handler->close();
             }
-        }catch (\Throwable $throwable){
+        } catch (\Throwable $throwable) {
             throw $throwable;
-        }finally{
+        } finally {
             //清理空间
             $this->sessionConfigContext->destroy();
             $this->sessionDataContext->destroy();
@@ -133,38 +133,38 @@ class Session
 
     function start()
     {
-        if(!$this->sessionConfigContext['isStart']){
+        if (!$this->sessionConfigContext['isStart']) {
 
             //gc准确计数
             $this->callTimes++;
-            if($this->gc_cycle_times && $this->callTimes > $this->gc_cycle_times){
+            if ($this->gc_cycle_times && $this->callTimes > $this->gc_cycle_times) {
                 $this->callTimes = 0;
-                Coroutine::create(function (){
+                Coroutine::create(function () {
                     $this->gc();
                 });
             }
-            try{
-                $ret = $this->handler->open($this->savePath,$this->name);
-                if(!$ret){
+            try {
+                $ret = $this->handler->open($this->savePath, $this->name);
+                if (!$ret) {
                     throw new Exception("session handler open savePath {$this->savePath} for saveName {$this->name} fail");
                 }
                 $data = unserialize($this->handler->read($this->sessionId()));
-                if(is_array($data)){
-                    foreach ($data as $key => $val){
+                if (is_array($data)) {
+                    foreach ($data as $key => $val) {
                         $this->sessionDataContext[$key] = $val;
                     }
                 }
                 $this->sessionConfigContext['isStart'] = true;
-                if($this->onStart){
-                    call_user_func($this->onStart,$this);
+                if ($this->onStart) {
+                    call_user_func($this->onStart, $this);
                 }
-            }catch (\Throwable $throwable){
+            } catch (\Throwable $throwable) {
                 //防止context内存泄漏
                 $this->writeClose();
                 throw $throwable;
             }
-            if($this->autoClear){
-                Coroutine::defer(function (){
+            if ($this->autoClear) {
+                Coroutine::defer(function () {
                     $this->writeClose();
                 });
             }
@@ -172,20 +172,20 @@ class Session
         return $this->sessionConfigContext['isStart'];
     }
 
-    function gc():Session
+    function gc(): Session
     {
         $this->start();
         $this->handler->gc($this->maxLifeTime);
         return $this;
     }
 
-    function setMaxLiftTime(int $ttl):Session
+    function setMaxLiftTime(int $ttl): Session
     {
         $this->maxLifeTime = $ttl;
         return $this;
     }
 
-    function getContextArray():SplContextArray
+    function getContextArray(): SplContextArray
     {
         return $this->sessionDataContext;
     }

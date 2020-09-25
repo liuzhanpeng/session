@@ -1,6 +1,6 @@
 <?php
 
-namespace EasySwoole\Session;
+namespace Lzpeng\EasySwoole\Session;
 
 use EasySwoole\RedisPool\Redis;
 
